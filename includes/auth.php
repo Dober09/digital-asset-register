@@ -1,25 +1,37 @@
 <?php
 // includes/auth.php
-if (session_status() === PHP_SESSION_NONE) session_start();
+// PROTOTYPE ONLY: fake session so APIs/UI work without a login system.
 
-/** Require the user to be logged in */
-function require_login(): void {
-    if (empty($_SESSION['user_id'])) {
-        header('Location: /auth/login.php');
-        exit;
-    }
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 
-/** Require a specific role (e.g. 'admin') */
-function require_role(string $role): void {
-    require_login();
-    if (($_SESSION['role'] ?? '') !== $role) {
-        http_response_code(403);
-        die('Access denied.');
-    }
+// Auto-populate a prototype session so the UI has a "logged in" user.
+if (!isset($_SESSION['security_id'])) {
+    $_SESSION['security_id'] = 'SEC001';
+    $_SESSION['name']        = 'Test Officer';
+    $_SESSION['surname']     = 'Officer';
+    $_SESSION['role']        = 'security';   // 'security' | 'admin'
 }
 
-/** Is the current user logged in? */
+function current_security_id(): string {
+    return $_SESSION['security_id'] ?? 'SEC001';
+}
+
+function current_user_id(): string {
+    // Placeholder valid 13-digit SA ID (8001015009087 passes Luhn).
+    return '8001015009087';
+}
+
 function is_logged_in(): bool {
-    return !empty($_SESSION['user_id']);
+    return isset($_SESSION['security_id']);
+}
+
+function redirect(string $to): void {
+    header("Location: $to");
+    exit;
+}
+
+function e($s): string {
+    return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 }

@@ -97,15 +97,18 @@ CREATE TABLE IF NOT EXISTS `DARS DB`.`Asset_Transfer` (
   `Original_Owner` VARCHAR(13) NOT NULL,
   `New_Owner` VARCHAR(13) NOT NULL,
   PRIMARY KEY (`LogID`),
-  INDEX `Provider_idx` (`Original_Owner` ASC, `New_Owner` ASC) VISIBLE,
   UNIQUE INDEX `LogID_UNIQUE` (`LogID` ASC) VISIBLE,
-  CONSTRAINT `Provider`
-    FOREIGN KEY (`Original_Owner` , `New_Owner`)
-    REFERENCES `DARS DB`.`User` (`ID_num` , `ID_num`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
+  INDEX `Provider_idx` (`Original_Owner` ASC, `New_Owner` ASC) VISIBLE,
+  INDEX `New_Owner_idx` (`New_Owner` ASC) VISIBLE,
+  CONSTRAINT `fk_transfer_original`
+    FOREIGN KEY (`Original_Owner`)
+    REFERENCES `DARS DB`.`User` (`ID_num`)
+    ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_transfer_new`
+    FOREIGN KEY (`New_Owner`)
+    REFERENCES `DARS DB`.`User` (`ID_num`)
+    ON DELETE NO ACTION ON UPDATE NO ACTION)
 ENGINE = InnoDB;
-
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;

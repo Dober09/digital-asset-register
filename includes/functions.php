@@ -1,38 +1,50 @@
 <?php
 // includes/functions.php
 
-/** Escape output to prevent XSS */
-function e($value): string {
-    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
-}
-
-/** Redirect helper */
-function redirect(string $path): void {
-    header("Location: $path");
-    exit;
-}
-
-/**
- * Generate a unique reference number, e.g. AST-2025-0001
- * Uses the DB to count this year's assets.
- */
-function generateReferenceNumber(PDO $pdo): string {
-    $year = date('Y');
-    $stmt = $pdo->prepare(
-        "SELECT COUNT(*) FROM assets WHERE YEAR(created_at) = ?"
-    );
-    $stmt->execute([$year]);
-    $count = (int)$stmt->fetchColumn() + 1;
-    return sprintf('AST-%s-%04d', $year, $count);
-}
-
-/** Basic required-field check */
-function required(array $fields): array {
-    $errors = [];
-    foreach ($fields as $key => $label) {
-        if (trim($_POST[$key] ?? '') === '') {
-            $errors[] = "$label is required.";
+function require_fields(array $data, array $fields): array {
+    $missing = [];
+    foreach ($fields as $f) {
+        if (!isset($data[$f]) || trim((string)$data[$f]) === '') {
+            $missing[] = $f;
         }
     }
-    return $errors;
+    return $missing;
+}
+
+function validate_sa_id(string $id): bool {
+    if (!preg_match('/^\d{13}$/', $id)) return false;
+    $sum = 0;
+    for ($i = 0; $i < 12; $i++) {
+        $d = (int)$id[$i];
+        if ($i % 2 === 1) {
+            $d *= 2;
+            if ($d > 9) $d -= 9;
+        }
+        $sum += $d;
+    }
+    return ((10 - ($sum % 10)) % 10) === (int)$id[12];
+}
+
+/** Ensure user exists, else create with placeholder password (none — schema has no password). */
+function find_or_create_user(PDO $pdo, array $u): string {
+    $stmt = $pdo->prepare("SELECT `ID_num` FROM `DARS DB`.`User` WHERE `ID_num` = ?");
+    $stmt->execute([$u['id_num']]);
+    if ($stmt->fetchColumn()) return $u['id_num'];
+
+    $stmt = $pdo->prepare(
+        "INSERT INTO `DARS DB`.`User` (`ID_num`,`Name`,`Surname`,`Email`) VALUES (?,?,?,?)"
+    );
+    $stmt->execute([$u['id_num'], $u['name'], $u['surname'], $u['email']]);
+    return $u['id_num'];
+}
+
+/** Ensure a Security officer row exists for our placeholder SEC001. */
+function ensure_placeholder_security(PDO $pdo): void {
+    $stmt = $pdo->prepare("SELECT `ID_num` FROM `DARS DB`.`Security` WHERE `ID_num` = ?");
+    $stmt->execute(['SEC001']);
+    if (!$stmt->fetchColumn()) {
+        $pdo->prepare(
+            "INSERT INTO `DARS DB`.`Security` (`ID_num`,`Name`,`Surname`) VALUES (?,?,?)"
+        )->execute(['SEC001', 'Test', 'Officer']);
+    }
 }

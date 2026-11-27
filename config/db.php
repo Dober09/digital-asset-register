@@ -1,15 +1,15 @@
 <?php
 // config/db.php
-// Database connection using PDO (prepared statements = security)
+// NOTE: schema name has a space, so we use backticks in every query.
 
 $DB_HOST = 'localhost';
-$DB_NAME = 'asset_register';   // <-- ask MySQL teammate
-$DB_USER = 'root';             // <-- ask MySQL teammate
-$DB_PASS = '';                 // <-- ask MySQL teammate
+$DB_NAME = 'DARS DB';
+$DB_USER = 'root';
+$DB_PASS = '';
 
 try {
     $pdo = new PDO(
-        "mysql:host=$DB_HOST;dbname=$DB_NAME;charset=utf8mb4",
+        "mysql:host=$DB_HOST;dbname={$DB_NAME};charset=utf8mb4",
         $DB_USER,
         $DB_PASS,
         [
@@ -19,6 +19,8 @@ try {
         ]
     );
 } catch (PDOException $e) {
-    // In production, don't show raw errors
-    die("Database connection failed: " . $e->getMessage());
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode(['ok' => false, 'error' => 'DB connection failed: ' . $e->getMessage()]);
+    exit;
 }
